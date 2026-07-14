@@ -107,20 +107,20 @@ function renderDuoc(data: SignatureData): string {
 // field populated" instead of a fixed required set.
 const duocDefault: Variant = {
   id: 'default',
-  label: 'DUOC UC',
+  label: 'Duoc UC',
   fields: [
-    { key: 'nombre', label: 'Nombre', required: false, format: 'capitalize' },
-    { key: 'rut', label: 'RUT', required: false, format: 'rut' },
-    { key: 'carrera', label: 'Carrera', required: false },
-    { key: 'escuela', label: 'Escuela', required: false },
-    { key: 'jornada', label: 'Jornada', required: false },
-    { key: 'sede', label: 'Sede', required: false },
+    { key: 'nombre', label: 'Nombre', required: false, format: 'capitalize', group: 'Identidad' },
+    { key: 'rut', label: 'RUT', required: false, format: 'rut', group: 'Identidad' },
+    { key: 'carrera', label: 'Carrera', required: false, group: 'Institución' },
+    { key: 'escuela', label: 'Escuela', required: false, group: 'Institución' },
+    { key: 'jornada', label: 'Jornada', required: false, group: 'Institución' },
+    { key: 'sede', label: 'Sede', required: false, group: 'Institución' },
   ],
   render: renderDuoc,
 };
 
 export const duocCategory: Category = {
   id: 'duoc',
-  label: 'DUOC UC',
+  label: 'Duoc UC',
   variants: [duocDefault],
 };

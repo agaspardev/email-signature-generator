@@ -119,10 +119,10 @@ const innobyteDefault: Variant = {
   id: 'default',
   label: 'Innobyte',
   fields: [
-    { key: 'nombre', label: 'Nombre', required: false, format: 'capitalize' },
-    { key: 'cargo', label: 'Cargo', required: false },
-    { key: 'telefono', label: 'Teléfono', required: false },
-    { key: 'email', label: 'Correo', required: false },
+    { key: 'nombre', label: 'Nombre', required: false, format: 'capitalize', group: 'Identidad' },
+    { key: 'cargo', label: 'Cargo', required: false, group: 'Identidad' },
+    { key: 'telefono', label: 'Teléfono', required: false, group: 'Contacto' },
+    { key: 'email', label: 'Correo', required: false, group: 'Contacto', inputType: 'email' },
   ],
   render: renderInnobyte,
 };

@@ -73,10 +73,22 @@ const copecDefault: Variant = {
   id: 'default',
   label: 'Copec',
   fields: [
-    { key: 'nombre', label: 'Nombre', required: false, format: 'capitalize' },
-    { key: 'cargo', label: 'Cargo', required: false },
-    { key: 'subgerencia', label: 'Subgerencia', required: false, defaultValue: 'Subgerencia Tecnología y Negocios' },
-    { key: 'gerencia', label: 'Gerencia', required: false, defaultValue: 'Gerencia de Tecnología' },
+    { key: 'nombre', label: 'Nombre', required: false, format: 'capitalize', group: 'Identidad' },
+    { key: 'cargo', label: 'Cargo', required: false, group: 'Identidad' },
+    {
+      key: 'subgerencia',
+      label: 'Subgerencia',
+      required: false,
+      defaultValue: 'Subgerencia Tecnología y Negocios',
+      group: 'Organización',
+    },
+    {
+      key: 'gerencia',
+      label: 'Gerencia',
+      required: false,
+      defaultValue: 'Gerencia de Tecnología',
+      group: 'Organización',
+    },
   ],
   render: renderCopec,
 };

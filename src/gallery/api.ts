@@ -1,6 +1,14 @@
 import { upload } from '@vercel/blob/client';
 
+/**
+ * Categories that can display a gallery photo. Purely a selection concept now
+ * (see storage.ts) — the underlying photo pool itself is shared: uploading
+ * once makes an image available to every category, no need to upload the
+ * same photo twice for DUOC and Personal.
+ */
 export type GalleryCategory = 'duoc' | 'personal';
+
+const GALLERY_PREFIX = 'signatures-gallery';
 
 export interface GalleryImage {
   url: string;
@@ -8,12 +16,8 @@ export interface GalleryImage {
   uploadedAt: string;
 }
 
-export async function uploadGalleryImage(
-  category: GalleryCategory,
-  file: File,
-  password: string,
-): Promise<GalleryImage> {
-  const blob = await upload(`signatures-gallery/${category}/${Date.now()}-${file.name}`, file, {
+export async function uploadGalleryImage(file: File, password: string): Promise<GalleryImage> {
+  const blob = await upload(`${GALLERY_PREFIX}/${Date.now()}-${file.name}`, file, {
     access: 'public',
     handleUploadUrl: '/api/blob-upload',
     clientPayload: JSON.stringify({ password }),
@@ -21,8 +25,8 @@ export async function uploadGalleryImage(
   return { url: blob.url, pathname: blob.pathname, uploadedAt: new Date().toISOString() };
 }
 
-export async function listGalleryImages(category: GalleryCategory): Promise<GalleryImage[]> {
-  const response = await fetch(`/api/blob-list?category=${category}`);
+export async function listGalleryImages(): Promise<GalleryImage[]> {
+  const response = await fetch('/api/blob-list');
   if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
     throw new Error('La galería no está disponible en este entorno (requiere estar desplegado en Vercel).');
   }

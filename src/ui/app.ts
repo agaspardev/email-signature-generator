@@ -11,12 +11,15 @@ import { copySignatureHtml } from '../export/clipboard.ts';
 import { downloadSignatureHtm } from '../export/download.ts';
 import { mountGalleryPicker } from '../gallery/ui.ts';
 import type { GalleryCategory } from '../gallery/api.ts';
+import { createCustomSelect } from './customSelect.ts';
 
 // Registration lives here (UI bootstrap), not as an import side-effect in the
-// template modules themselves — keeps src/templates/ pure data.
+// template modules themselves — keeps src/templates/ pure data. Registration
+// order determines dropdown order and the default selection — Personal is
+// first, so it's the main view when the app loads.
+registerCategory(personalCategory);
 registerCategory(duocCategory);
 registerCategory(innobyteCategory);
-registerCategory(personalCategory);
 registerCategory(copecCategory);
 
 // DUOC and Personal both use the Blob-backed photo gallery. Innobyte and
@@ -39,21 +42,51 @@ export function mountApp(root: HTMLElement): void {
 
   root.innerHTML = '';
 
+  const shell = document.createElement('div');
+  shell.className = 'app-shell';
+
+  const header = document.createElement('header');
+  header.className = 'app-header';
+
+  const brandMark = document.createElement('div');
+  brandMark.className = 'brand-mark';
+  brandMark.textContent = 'ES';
+
+  const headerText = document.createElement('div');
+  const kicker = document.createElement('p');
+  kicker.className = 'app-kicker';
+  kicker.textContent = 'Generador de firmas';
+  const title = document.createElement('h1');
+  title.className = 'app-title';
+  title.textContent = 'Email Signature Studio';
+  headerText.append(kicker, title);
+
+  header.append(brandMark, headerText);
+
   const layout = document.createElement('div');
   layout.className = 'app-layout';
 
-  const selectorLabel = document.createElement('label');
+  const controlsPanel = document.createElement('section');
+  controlsPanel.className = 'panel panel-controls';
+
+  const outputPanel = document.createElement('section');
+  outputPanel.className = 'panel panel-output';
+
+  const controlsTitle = document.createElement('h2');
+  controlsTitle.className = 'panel-title';
+  controlsTitle.textContent = 'Datos';
+  controlsPanel.appendChild(controlsTitle);
+
+  const selectorLabel = document.createElement('div');
   selectorLabel.className = 'field';
   const selectorSpan = document.createElement('span');
   selectorSpan.textContent = 'Categoría';
-  const select = document.createElement('select');
-  categories.forEach((category) => {
-    const option = document.createElement('option');
-    option.value = category.id;
-    option.textContent = category.label;
-    select.appendChild(option);
-  });
-  selectorLabel.append(selectorSpan, select);
+  const categorySelect = createCustomSelect(
+    categories.map((category) => ({ value: category.id, label: category.label })),
+    categories[0].id,
+    () => onCategoryChange(),
+  );
+  selectorLabel.append(selectorSpan, categorySelect.element);
 
   const photoLabel = document.createElement('div');
   photoLabel.className = 'field';
@@ -68,44 +101,36 @@ export function mountApp(root: HTMLElement): void {
   const siteToggleSpan = document.createElement('span');
   siteToggleSpan.textContent = 'Web personal';
 
-  const siteRadioGroup = document.createElement('div');
-  siteRadioGroup.className = 'radio-group';
+  const siteToggleRow = document.createElement('div');
+  siteToggleRow.className = 'toggle-row';
 
-  const siteRadioDefault = document.createElement('input');
-  siteRadioDefault.type = 'radio';
-  siteRadioDefault.name = 'personal-site-mode';
-  siteRadioDefault.id = 'personal-site-default';
-  siteRadioDefault.value = 'default';
-  siteRadioDefault.checked = true;
-  const siteRadioDefaultLabel = document.createElement('label');
-  siteRadioDefaultLabel.htmlFor = siteRadioDefault.id;
-  siteRadioDefaultLabel.textContent = 'Por defecto (antoniogaspar.dev)';
+  const siteToggleSwitch = document.createElement('label');
+  siteToggleSwitch.className = 'toggle-switch';
+  const siteToggleCheckbox = document.createElement('input');
+  siteToggleCheckbox.type = 'checkbox';
+  const siteToggleSlider = document.createElement('span');
+  siteToggleSlider.className = 'toggle-slider';
+  siteToggleSwitch.append(siteToggleCheckbox, siteToggleSlider);
 
-  const siteRadioCustom = document.createElement('input');
-  siteRadioCustom.type = 'radio';
-  siteRadioCustom.name = 'personal-site-mode';
-  siteRadioCustom.id = 'personal-site-custom';
-  siteRadioCustom.value = 'custom';
-  const siteRadioCustomLabel = document.createElement('label');
-  siteRadioCustomLabel.htmlFor = siteRadioCustom.id;
-  siteRadioCustomLabel.textContent = 'Otra';
+  const siteToggleLabelText = document.createElement('span');
+  siteToggleLabelText.className = 'toggle-text';
+  siteToggleLabelText.textContent = 'Usar otra web (por defecto: antoniogaspar.dev)';
 
-  siteRadioGroup.append(
-    siteRadioDefault,
-    siteRadioDefaultLabel,
-    siteRadioCustom,
-    siteRadioCustomLabel,
-  );
+  siteToggleRow.append(siteToggleSwitch, siteToggleLabelText);
 
   const siteCustomUrlInput = document.createElement('input');
   siteCustomUrlInput.type = 'url';
   siteCustomUrlInput.placeholder = 'https://...';
   siteCustomUrlInput.style.display = 'none';
 
-  siteToggleWrap.append(siteToggleSpan, siteRadioGroup, siteCustomUrlInput);
+  siteToggleWrap.append(siteToggleSpan, siteToggleRow, siteCustomUrlInput);
 
   const formSection = document.createElement('section');
   formSection.className = 'form-section';
+
+  const previewTitle = document.createElement('h2');
+  previewTitle.className = 'panel-title';
+  previewTitle.textContent = 'Vista previa';
 
   const previewSection = document.createElement('section');
   previewSection.className = 'preview-section';
@@ -115,10 +140,12 @@ export function mountApp(root: HTMLElement): void {
 
   const copyButton = document.createElement('button');
   copyButton.type = 'button';
+  copyButton.className = 'btn btn-primary';
   copyButton.textContent = 'Copiar (Gmail / Outlook Web)';
 
   const downloadButton = document.createElement('button');
   downloadButton.type = 'button';
+  downloadButton.className = 'btn btn-secondary';
   downloadButton.textContent = 'Descargar .htm (Outlook Desktop)';
 
   const statusEl = document.createElement('p');
@@ -126,8 +153,11 @@ export function mountApp(root: HTMLElement): void {
 
   exportSection.append(copyButton, downloadButton, statusEl);
 
-  layout.append(selectorLabel, photoLabel, formSection, siteToggleWrap, previewSection, exportSection);
-  root.appendChild(layout);
+  controlsPanel.append(selectorLabel, photoLabel, formSection, siteToggleWrap);
+  outputPanel.append(previewTitle, previewSection, exportSection);
+  layout.append(controlsPanel, outputPanel);
+  shell.append(header, layout);
+  root.appendChild(shell);
 
   let currentData: SignatureData = {};
   let currentResult: RenderResult | undefined;
@@ -138,15 +168,14 @@ export function mountApp(root: HTMLElement): void {
   }
 
   function resetPersonalSiteToggle(): void {
-    siteRadioDefault.checked = true;
-    siteRadioCustom.checked = false;
+    siteToggleCheckbox.checked = false;
     siteCustomUrlInput.value = '';
     siteCustomUrlInput.style.display = 'none';
     delete currentData.personalSiteUrl;
   }
 
   function update(): void {
-    const category = categories.find((c) => c.id === select.value);
+    const category = categories.find((c) => c.id === categorySelect.value);
     // Single-variant categories only in v1 (Phase 5.3) — resolveVariant()
     // auto-resolves without a variantId when a category has exactly one.
     const variant = category && resolveVariant(category.id);
@@ -159,7 +188,7 @@ export function mountApp(root: HTMLElement): void {
   }
 
   function onCategoryChange(): void {
-    const category = categories.find((c) => c.id === select.value);
+    const category = categories.find((c) => c.id === categorySelect.value);
     const variant = category && resolveVariant(category.id);
     if (!variant) return;
 
@@ -193,7 +222,7 @@ export function mountApp(root: HTMLElement): void {
   }
 
   function onSiteModeChange(): void {
-    const useCustom = siteRadioCustom.checked;
+    const useCustom = siteToggleCheckbox.checked;
     siteCustomUrlInput.style.display = useCustom ? '' : 'none';
     if (!useCustom) {
       delete currentData.personalSiteUrl;
@@ -214,8 +243,7 @@ export function mountApp(root: HTMLElement): void {
     update();
   }
 
-  siteRadioDefault.addEventListener('change', onSiteModeChange);
-  siteRadioCustom.addEventListener('change', onSiteModeChange);
+  siteToggleCheckbox.addEventListener('change', onSiteModeChange);
   siteCustomUrlInput.addEventListener('input', applyCustomSiteUrl);
 
   copyButton.addEventListener('click', () => {
@@ -233,10 +261,9 @@ export function mountApp(root: HTMLElement): void {
 
   downloadButton.addEventListener('click', () => {
     if (!currentResult?.ok) return;
-    downloadSignatureHtm(currentResult.html, `firma-${select.value}.htm`);
+    downloadSignatureHtm(currentResult.html, `firma-${categorySelect.value}.htm`);
     statusEl.textContent = 'Descarga iniciada.';
   });
 
-  select.addEventListener('change', onCategoryChange);
   onCategoryChange();
 }

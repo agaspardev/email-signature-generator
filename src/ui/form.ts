@@ -32,7 +32,16 @@ export function renderForm(
     }
   });
 
+  let previousGroup: string | undefined;
   schema.forEach((field) => {
+    if (field.group && field.group !== previousGroup) {
+      const heading = document.createElement('h3');
+      heading.className = 'field-group-title';
+      heading.textContent = field.group;
+      container.appendChild(heading);
+    }
+    previousGroup = field.group;
+
     const label = document.createElement('label');
     label.className = 'field';
 
@@ -40,7 +49,7 @@ export function renderForm(
     span.textContent = field.required ? `${field.label} *` : field.label;
 
     const input = document.createElement('input');
-    input.type = 'text';
+    input.type = field.inputType ?? 'text';
     input.value = data[field.key] ?? '';
     input.addEventListener('input', () => {
       const value = applyFormat(field, input.value);

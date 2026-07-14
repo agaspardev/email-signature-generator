@@ -1,12 +1,15 @@
 import type { GalleryCategory, GalleryImage } from './api.ts';
 import { uploadGalleryImage, listGalleryImages, deleteGalleryImage } from './api.ts';
 import { getSelectedImage, setSelectedImage } from './storage.ts';
+import { askPassword } from '../ui/passwordModal.ts';
 
 /**
- * Renders a thumbnail picker backed by the Blob gallery for one category.
- * Selecting or uploading an image calls `onSelect` with the new URL (or
- * `undefined` if the selected image was deleted) — that URL is a real,
- * permanent Blob URL, safe to use directly in the exported signature.
+ * Renders a thumbnail picker backed by the Blob gallery. The photo pool is
+ * shared across every category — uploading once makes an image available
+ * everywhere — but each category remembers its own selection independently
+ * (see storage.ts). Selecting or uploading an image calls `onSelect` with
+ * the new URL (or `undefined` if the selected image was deleted) — that URL
+ * is a real, permanent Blob URL, safe to use directly in the exported signature.
  */
 export function mountGalleryPicker(
   container: HTMLElement,
@@ -69,7 +72,7 @@ export function mountGalleryPicker(
   }
 
   async function handleDelete(image: GalleryImage, selected: string | undefined): Promise<void> {
-    const password = window.prompt('Contraseña para eliminar:');
+    const password = await askPassword('Contraseña para eliminar la imagen');
     if (!password) return;
     try {
       await deleteGalleryImage(image.url, password);
@@ -82,7 +85,7 @@ export function mountGalleryPicker(
 
   async function refresh(): Promise<void> {
     try {
-      images = await listGalleryImages(category);
+      images = await listGalleryImages();
       statusEl.textContent = '';
       renderGrid();
     } catch (err) {
@@ -100,12 +103,12 @@ export function mountGalleryPicker(
   });
 
   async function handleUpload(file: File): Promise<void> {
-    const password = window.prompt('Contraseña para subir:');
+    const password = await askPassword('Contraseña para subir la imagen');
     if (!password) return;
 
     statusEl.textContent = 'Subiendo...';
     try {
-      const image = await uploadGalleryImage(category, file, password);
+      const image = await uploadGalleryImage(file, password);
       setSelectedImage(category, image.url);
       onSelect(image.url);
       await refresh();

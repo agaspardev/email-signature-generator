@@ -12,13 +12,12 @@ function sendJson(res: NodeApiResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-/** Public read — returns already-public Blob URLs, so listing them adds no real exposure. */
-export default async function handler(req: NodeApiRequest, res: NodeApiResponse): Promise<void> {
-  const url = new URL(req.url ?? '/', `https://${req.headers.host ?? 'localhost'}`);
-  const category = url.searchParams.get('category');
-  const prefix = category ? `${GALLERY_PREFIX}/${category}/` : `${GALLERY_PREFIX}/`;
-
-  const { blobs } = await list({ prefix });
+/**
+ * Public read — returns already-public Blob URLs, so listing them adds no
+ * real exposure. One shared pool for every category that supports a photo.
+ */
+export default async function handler(_req: NodeApiRequest, res: NodeApiResponse): Promise<void> {
+  const { blobs } = await list({ prefix: `${GALLERY_PREFIX}/` });
   sendJson(res, 200, {
     images: blobs.map((blob) => ({ url: blob.url, pathname: blob.pathname, uploadedAt: blob.uploadedAt })),
   });

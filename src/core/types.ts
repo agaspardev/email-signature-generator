@@ -11,6 +11,10 @@ export interface FieldDef {
   format?: 'rut' | 'capitalize';
   /** Pre-fills the form input on category selection; still fully editable. */
   defaultValue?: string;
+  /** Groups consecutive fields under a subsection heading in the form (e.g. "Identidad", "Institución"). */
+  group?: string;
+  /** HTML input type — enables native browser validation/keyboard (e.g. 'email'). Defaults to 'text'. */
+  inputType?: 'text' | 'email';
 }
 
 export type FieldSchema = FieldDef[];
