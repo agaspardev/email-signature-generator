@@ -1,0 +1,152 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #08060d;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 24px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.field input,
+.field select {
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #e5e4e7;
+  border-radius: 4px;
+}
+
+.form-section,
+.site-toggle {
+  grid-column: 1;
+}
+
+.preview-section {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  border: 1px dashed #e5e4e7;
+  border-radius: 8px;
+  padding: 16px;
+  align-self: start;
+}
+
+.preview-incomplete {
+  color: #6b6375;
+  font-size: 14px;
+}
+
+.export-section {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.export-section button {
+  padding: 8px 14px;
+  font-size: 14px;
+  border: 1px solid #e5e4e7;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.export-section button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-status {
+  font-size: 13px;
+  color: #6b6375;
+  margin: 0;
+}
+
+.radio-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.radio-group label {
+  margin-right: 12px;
+  font-weight: normal;
+}
+
+.gallery-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gallery-thumb-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.gallery-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.gallery-thumb.selected {
+  border-color: #194163;
+}
+
+.gallery-delete-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #e5e4e7;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.gallery-upload-btn {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid #e5e4e7;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.gallery-status {
+  font-size: 12px;
+  color: #6b6375;
+  margin: 0;
+}
