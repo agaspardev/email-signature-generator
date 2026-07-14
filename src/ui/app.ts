@@ -12,6 +12,15 @@ import { downloadSignatureHtm } from '../export/download.ts';
 import { mountGalleryPicker } from '../gallery/ui.ts';
 import type { GalleryCategory } from '../gallery/api.ts';
 import { createCustomSelect } from './customSelect.ts';
+import { showMessage } from './messageModal.ts';
+import {
+  computeFingerprint,
+  findDuplicate,
+  saveSignature,
+  deleteSignature,
+  getSavedSignatures,
+  type SavedSignature,
+} from '../signatures/storage.ts';
 
 // Registration lives here (UI bootstrap), not as an import side-effect in the
 // template modules themselves — keeps src/templates/ pure data. Registration
@@ -148,13 +157,25 @@ export function mountApp(root: HTMLElement): void {
   downloadButton.className = 'btn btn-secondary';
   downloadButton.textContent = 'Descargar .htm (Outlook Desktop)';
 
+  const saveButton = document.createElement('button');
+  saveButton.type = 'button';
+  saveButton.className = 'btn btn-secondary';
+  saveButton.textContent = 'Guardar firma';
+
   const statusEl = document.createElement('p');
   statusEl.className = 'export-status';
 
-  exportSection.append(copyButton, downloadButton, statusEl);
+  exportSection.append(copyButton, downloadButton, saveButton, statusEl);
+
+  const savedTitle = document.createElement('h2');
+  savedTitle.className = 'panel-title';
+  savedTitle.textContent = 'Firmas guardadas';
+
+  const savedListEl = document.createElement('div');
+  savedListEl.className = 'saved-list';
 
   controlsPanel.append(selectorLabel, photoLabel, formSection, siteToggleWrap);
-  outputPanel.append(previewTitle, previewSection, exportSection);
+  outputPanel.append(previewTitle, previewSection, exportSection, savedTitle, savedListEl);
   layout.append(controlsPanel, outputPanel);
   shell.append(header, layout);
   root.appendChild(shell);
@@ -165,6 +186,66 @@ export function mountApp(root: HTMLElement): void {
   function setButtonsEnabled(enabled: boolean): void {
     copyButton.disabled = !enabled;
     downloadButton.disabled = !enabled;
+    saveButton.disabled = !enabled;
+  }
+
+  function renderSavedEntry(entry: SavedSignature): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'saved-item';
+
+    const info = document.createElement('div');
+    info.className = 'saved-item-info';
+    const label = document.createElement('p');
+    label.className = 'saved-item-label';
+    label.textContent = `${entry.categoryLabel} — ${entry.label}`;
+    const date = document.createElement('p');
+    date.className = 'saved-item-date';
+    date.textContent = new Date(entry.savedAt).toLocaleString();
+    info.append(label, date);
+
+    const actions = document.createElement('div');
+    actions.className = 'saved-item-actions';
+
+    const copyEntryButton = document.createElement('button');
+    copyEntryButton.type = 'button';
+    copyEntryButton.className = 'btn btn-small btn-secondary';
+    copyEntryButton.textContent = 'Copiar';
+    copyEntryButton.addEventListener('click', () => {
+      copySignatureHtml(entry.html)
+        .then(() => {
+          statusEl.textContent = 'Copiado al portapapeles.';
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'error desconocido';
+          statusEl.textContent = `Error al copiar: ${message}`;
+        });
+    });
+
+    const deleteEntryButton = document.createElement('button');
+    deleteEntryButton.type = 'button';
+    deleteEntryButton.className = 'btn btn-small btn-danger';
+    deleteEntryButton.textContent = 'Eliminar';
+    deleteEntryButton.addEventListener('click', () => {
+      deleteSignature(entry.id);
+      refreshSavedList();
+    });
+
+    actions.append(copyEntryButton, deleteEntryButton);
+    item.append(info, actions);
+    return item;
+  }
+
+  function refreshSavedList(): void {
+    const saved = getSavedSignatures();
+    savedListEl.innerHTML = '';
+    if (saved.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'saved-list-empty';
+      empty.textContent = 'Todavía no hay firmas guardadas.';
+      savedListEl.appendChild(empty);
+      return;
+    }
+    saved.forEach((entry) => savedListEl.appendChild(renderSavedEntry(entry)));
   }
 
   function resetPersonalSiteToggle(): void {
@@ -215,7 +296,10 @@ export function mountApp(root: HTMLElement): void {
       category && CATEGORIES_WITH_PERSONAL_SITE_TOGGLE.has(category.id) ? '' : 'none';
 
     renderForm(formSection, variant.fields, currentData, (data) => {
-      currentData = data;
+      // Merge, don't replace — `data` only tracks this variant's own fields,
+      // so replacing currentData outright would drop photoUrl/personalSiteUrl
+      // (set outside the form, by the gallery picker / site toggle).
+      currentData = { ...currentData, ...data };
       update();
     });
     update();
@@ -265,5 +349,30 @@ export function mountApp(root: HTMLElement): void {
     statusEl.textContent = 'Descarga iniciada.';
   });
 
+  saveButton.addEventListener('click', () => {
+    if (!currentResult?.ok) return;
+    const category = categories.find((c) => c.id === categorySelect.value);
+    if (!category) return;
+
+    const fingerprint = computeFingerprint(currentData);
+    const duplicate = findDuplicate(category.id, fingerprint);
+    if (duplicate) {
+      void showMessage('Firma ya guardada', 'Esta firma ya existe en tus firmas guardadas — todos los campos y la foto coinciden con una guardada anteriormente.');
+      return;
+    }
+
+    const label = currentData.nombre || new Date().toLocaleDateString();
+    saveSignature({
+      categoryId: category.id,
+      categoryLabel: category.label,
+      label,
+      html: currentResult.html,
+      fingerprint,
+    });
+    refreshSavedList();
+    statusEl.textContent = 'Firma guardada.';
+  });
+
   onCategoryChange();
+  refreshSavedList();
 }

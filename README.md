@@ -30,7 +30,7 @@ Innobyte and Copec use fixed brand assets committed under `public/signatures/` i
 
 - [Vite](https://vite.dev/) + TypeScript, no UI framework — the actual complexity here is generating correct, constrained HTML, which a component framework doesn't help with.
 - A small constrained builder (`src/core/builder.ts`) is the *only* way templates produce markup — flexbox, grid, external fonts, and class-based CSS are structurally impossible to emit, not just discouraged. A runtime guard (`src/core/guard.ts`) double-checks every render.
-- Three Vercel serverless functions (`api/blob-*.ts`) handle the photo gallery's upload/list/delete against Vercel Blob (Node.js runtime — `@vercel/blob`'s server operations aren't Edge-compatible).
+- Three Vercel serverless functions (`api/blob-*.ts`) handle the photo gallery's upload/list/delete against Vercel Blob (Node.js runtime — `@vercel/blob`'s server operations aren't Edge-compatible). A fourth, `api/login.ts`, runs on Edge and only touches Web Crypto.
 
 ## Local development
 
@@ -46,9 +46,14 @@ The photo gallery's API routes only run on Vercel (locally via `vercel dev`, or 
 
 | Variable | Required | Description |
 |---|---|---|
+| `SITE_PASSWORD` | Yes | Gates the entire site — every request is intercepted by `middleware.ts` and shown a login page until this password is entered. Separate from `GALLERY_PASSWORD` on purpose: visiting the site and managing photos are different privilege levels. |
 | `GALLERY_PASSWORD` | Yes, for photo upload/delete | Set in the Vercel project's environment variables. Anyone with this password can add or remove gallery photos — keep it private. |
 | `BLOB_READ_WRITE_TOKEN` | Auto-provisioned | Set automatically once a Blob store is connected to the Vercel project. No manual setup needed. |
 
+## Site access
+
+The whole app sits behind a password (`SITE_PASSWORD`), enforced by Vercel Edge Middleware (`middleware.ts`) — not just a client-side check, since that could be bypassed by reading the page source. An unauthenticated request gets a login page instead of the app; on success, `api/login.ts` sets a signed, `HttpOnly` session cookie (derived from `SITE_PASSWORD` via HMAC, not the password itself) that lasts for the browser session only.
+
 ## Deployment
 
-Deploys as a static Vite site with three serverless functions on Vercel. Connect the repository, add a Blob store to the project, and set `GALLERY_PASSWORD` in the environment variables — no other configuration required.
+Deploys as a static Vite site with Edge Middleware and serverless functions on Vercel. Connect the repository, add a Blob store to the project, and set `SITE_PASSWORD` and `GALLERY_PASSWORD` in the environment variables — no other configuration required.
