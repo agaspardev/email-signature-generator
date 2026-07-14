@@ -1,6 +1,8 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
-export const config = { runtime: 'edge' };
+// @vercel/blob's server operations pull in Node.js-only modules internally
+// (undici, node:stream, etc.) — Node.js runtime only, NOT Edge (the default
+// here is Node.js; do not add `runtime: 'edge'`).
 
 const ALLOWED_CONTENT_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
 

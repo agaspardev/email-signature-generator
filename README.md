@@ -30,7 +30,7 @@ Innobyte and Copec use fixed brand assets committed under `public/signatures/` i
 
 - [Vite](https://vite.dev/) + TypeScript, no UI framework — the actual complexity here is generating correct, constrained HTML, which a component framework doesn't help with.
 - A small constrained builder (`src/core/builder.ts`) is the *only* way templates produce markup — flexbox, grid, external fonts, and class-based CSS are structurally impossible to emit, not just discouraged. A runtime guard (`src/core/guard.ts`) double-checks every render.
-- Two Vercel Edge Functions (`api/blob-*.ts`) handle the photo gallery's upload/list/delete against Vercel Blob.
+- Three Vercel serverless functions (`api/blob-*.ts`) handle the photo gallery's upload/list/delete against Vercel Blob (Node.js runtime — `@vercel/blob`'s server operations aren't Edge-compatible).
 
 ## Local development
 
@@ -51,4 +51,4 @@ The photo gallery's API routes only run on Vercel (locally via `vercel dev`, or 
 
 ## Deployment
 
-Deploys as a static Vite site with two Edge Functions on Vercel. Connect the repository, add a Blob store to the project, and set `GALLERY_PASSWORD` in the environment variables — no other configuration required.
+Deploys as a static Vite site with three serverless functions on Vercel. Connect the repository, add a Blob store to the project, and set `GALLERY_PASSWORD` in the environment variables — no other configuration required.

@@ -1,6 +1,8 @@
 import { list } from '@vercel/blob';
 
-export const config = { runtime: 'edge' };
+// @vercel/blob's server operations (list/del/put) pull in Node.js-only
+// modules internally (undici, node:stream, etc.) — Node.js runtime only,
+// NOT Edge (the default here is Node.js; do not add `runtime: 'edge'`).
 
 const GALLERY_PREFIX = 'signatures-gallery';
 
