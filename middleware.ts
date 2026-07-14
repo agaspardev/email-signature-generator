@@ -38,9 +38,12 @@ function readCookie(request: Request, name: string): string | undefined {
 }
 
 export const config = {
-  // Everything except the login endpoint itself — otherwise submitting the
-  // password would be blocked by the very check it's trying to pass.
-  matcher: '/((?!api/login).*)',
+  // Excludes the login endpoint (or submitting the password would be
+  // blocked by the very check it's trying to pass) and /signatures/* — the
+  // fixed brand images (Innobyte logo, Copec logo/planet) are embedded by
+  // absolute URL in exported signature HTML, so email clients fetch them
+  // unauthenticated, with no session cookie to present.
+  matcher: '/((?!api/login|signatures/).*)',
 };
 
 function loginPage(showError: boolean): string {
