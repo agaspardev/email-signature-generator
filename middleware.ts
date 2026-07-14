@@ -1,5 +1,41 @@
 import { next } from '@vercel/edge';
-import { SESSION_COOKIE, computeSessionToken, readCookie } from './src/server/session.ts';
+
+// Duplicated in api/login.ts rather than imported from a shared local module —
+// Vercel's Edge bundler mis-bundles local files shared between middleware.ts
+// and an api/ Edge Function (each is built as an independent Edge bundle),
+// producing a false "referencing unsupported modules" build failure.
+const SESSION_COOKIE = 'site_session';
+
+/**
+ * A token derived from the site password via HMAC-SHA256 — not the password
+ * itself, and not guessable without knowing SITE_PASSWORD. Deterministic
+ * (same password -> same token) so middleware can recompute and compare it
+ * without needing separate server-side session storage.
+ */
+async function computeSessionToken(secret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, enc.encode('site-session'));
+  return Array.from(new Uint8Array(signature))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function readCookie(request: Request, name: string): string | undefined {
+  const header = request.headers.get('cookie');
+  if (!header) return undefined;
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return rest.join('=');
+  }
+  return undefined;
+}
 
 export const config = {
   // Everything except the login endpoint itself — otherwise submitting the
